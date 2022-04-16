@@ -1,6 +1,25 @@
 # Go-do
 A todo cli application based on the [todo.txt](https://github.com/todotxt/todo.txt) format.
 
+## Features
+### General
+- [] Display all todos command (`--all` or `-a`)
+- [] Create todo command (`--create` or `-c`)
+- [] Help command (lists available commands + a description for the todo.txt format)
+
+### Todos
+- [] Add a todo
+- [] Update a todo
+- [] Delete a todo
+- [] List all todos
+- [] Filter todos
+  - [] Complete or incomplete
+  - [] By completion/creation date
+  - [] By tags
+    - [] By project tag
+    - [] By context tag
+    - [] By key value tag
+
 ## Grammar translation
 This is a representation of the `todo.txt` format in `EBNF`.
 ```
