@@ -48,12 +48,11 @@ const (
 
 type Token struct {
 	tokenType string
-	lexeme    string
 	value     string
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("{ tokenType: %s, lexeme: %s, value: %s }", t.tokenType, t.lexeme, t.value)
+	return fmt.Sprintf("{ tokenType: %s, value: %s }", t.tokenType, t.value)
 }
 
 type TagType int8
@@ -69,11 +68,11 @@ func (t TagType) String() string {
 }
 
 type Tag struct {
-	/// Project, context or key-value.
+	// Project, context or key-value.
 	tagType TagType
 	value   string
 
-	/// A key exists if a tag is a key-value.
+	// A key exists if a tag is a key-value.
 	key *string
 }
 
@@ -82,26 +81,26 @@ func (t Tag) String() string {
 }
 
 type Description struct {
-	/// Text content for the description.
+	// Text content for the description.
 	text string
-	/// List of description's tags.
+	// List of description's tags.
 	tags []Tag
 }
 
 type Todo struct {
-	/// Mandatory: Description + tags section of the todo.
+	// Mandatory: Description + tags section of the todo.
 	description Description
 
-	/// Optional: Todo is complete. Can get 'x' as value
+	// Optional: Todo is complete. Can get 'x' as value
 	done *rune
-	/// Optional: The todo's priority is defined as a capital letter (A-Z)
-	/// enclosed in parentheses, e.g., (A)
+	// Optional: The todo's priority is defined as a capital letter (A-Z)
+	// enclosed in parentheses, e.g., (A)
 	priority *string
 
-	/// Optional: Date the todo was created at (YYYY-MM-DD)
+	// Optional: Date the todo was created at (YYYY-MM-DD)
 	creationDate *string
-	/// Optional: Date the todo was completed (YYYY-MM-DD).
-	/// Its existence is dependent on creationDate.
+	// Optional: Date the todo was completed (YYYY-MM-DD).
+	// Its existence is dependent on creationDate.
 	completionDate *string
 }
 
