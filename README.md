@@ -12,6 +12,10 @@ A todo cli application based on the [todo.txt](https://github.com/todotxt/todo.t
 - [] Update a todo
 - [] Delete a todo
 - [] List all todos
+- [] Sort todos
+  - [] By priority
+  - [] By completion status
+  - [] By tags
 - [] Filter todos
   - [] Complete or incomplete
   - [] By completion/creation date
@@ -25,7 +29,7 @@ This is a representation of the `todo.txt` format in `EBNF`.
 ```
 todo
   : 
-  (completed SPACE)?
+  (complete SPACE)?
   (priority SPACE)?
   (dates SPACE)?
   description{1}
@@ -37,12 +41,12 @@ description
   context_tag*
   key_value_tag*
   ;
-completed: 'x';
+complete: 'x';
 priority: '(' [A-Z]{1} ')';
-dates: DATE_FORMAT SPACE DATE_FORMAT; // completion_date creation_date
+dates: DATE_FORMAT | (DATE_FORMAT SPACE DATE_FORMAT); // completion_date? creation_date
 project_tag: SPACE '+' STRING;
 context_tag: SPACE '@' STRING;
 key_value_tag: SPACE \S+:\S+;
 SPACE: ' ';
-DATE_FORMAT: /\d{4}-\d{2}-\d{2}/;
+DATE_FORMAT: /\d{4}-\d{2}-\d{2}/; // YYYY-MM-DD
 ```
