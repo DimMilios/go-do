@@ -31,7 +31,7 @@ todo
   : 
   (complete SPACE)?
   (priority SPACE)?
-  (dates SPACE)?
+  (completion_date SPACE)?
   description{1}
   ;
 description
@@ -43,7 +43,7 @@ description
   ;
 complete: 'x';
 priority: '(' [A-Z]{1} ')';
-dates: DATE_FORMAT | (DATE_FORMAT SPACE DATE_FORMAT); // completion_date? creation_date
+completion_date: DATE_FORMAT?;
 project_tag: SPACE '+' STRING;
 context_tag: SPACE '@' STRING;
 key_value_tag: SPACE \S+:\S+;
