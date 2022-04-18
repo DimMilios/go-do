@@ -293,12 +293,13 @@ func Test_Parse_Completion_Date(t *testing.T) {
 	}
 }
 
-func Test_Parse_Bad_Date_Should_Panic(t *testing.T) {
-	input := "2016-5-20 simple description"
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered:", r)
+func Test_Parse_Bad_Date_Should_Return_Error(t *testing.T) {
+	inputs := []string{"2015-5-20 simple description", "20-05-20 simple description", "2015--20 simple description", "2015-20 simple due:now @ctx1 +proj1", "x 2015-20 simple @ctx1 +proj1"}
+
+	for _, input := range inputs {
+		_, err := Parse(input)
+		if err == nil {
+			t.Fatal("Parsing a bad date should return an error.")
 		}
-	}()
-	Parse(input)
+	}
 }
