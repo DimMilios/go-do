@@ -7,43 +7,47 @@ import (
 	_ "log"
 	"regexp"
 	"strings"
+	"time"
 )
 
 const (
-	CHAR_A      string = "A"
-	CHAR_B      string = "B"
-	CHAR_C      string = "C"
-	CHAR_D      string = "D"
-	CHAR_E      string = "E"
-	CHAR_F      string = "F"
-	CHAR_G      string = "G"
-	CHAR_H      string = "H"
-	CHAR_I      string = "I"
-	CHAR_J      string = "J"
-	CHAR_K      string = "K"
-	CHAR_L      string = "L"
-	CHAR_M      string = "M"
-	CHAR_N      string = "N"
-	CHAR_O      string = "O"
-	CHAR_P      string = "P"
-	CHAR_Q      string = "Q"
-	CHAR_R      string = "R"
-	CHAR_S      string = "S"
-	CHAR_T      string = "T"
-	CHAR_U      string = "U"
-	CHAR_V      string = "V"
-	CHAR_W      string = "W"
-	CHAR_X      string = "X"
-	CHAR_Y      string = "Y"
-	CHAR_Z      string = "Z"
-	DONE_CHAR   string = "x"
-	LEFT_PAREN  string = "("
-	RIGHT_PAREN string = ")"
-	PLUS        string = "+"
-	AT          string = "@"
-	COLON       string = ":"
-	EOL         string = "EOL"
-	STRING      string = "STRING"
+	CHAR_A      = "A"
+	CHAR_B      = "B"
+	CHAR_C      = "C"
+	CHAR_D      = "D"
+	CHAR_E      = "E"
+	CHAR_F      = "F"
+	CHAR_G      = "G"
+	CHAR_H      = "H"
+	CHAR_I      = "I"
+	CHAR_J      = "J"
+	CHAR_K      = "K"
+	CHAR_L      = "L"
+	CHAR_M      = "M"
+	CHAR_N      = "N"
+	CHAR_O      = "O"
+	CHAR_P      = "P"
+	CHAR_Q      = "Q"
+	CHAR_R      = "R"
+	CHAR_S      = "S"
+	CHAR_T      = "T"
+	CHAR_U      = "U"
+	CHAR_V      = "V"
+	CHAR_W      = "W"
+	CHAR_X      = "X"
+	CHAR_Y      = "Y"
+	CHAR_Z      = "Z"
+	DONE_CHAR   = "x"
+	LEFT_PAREN  = "("
+	RIGHT_PAREN = ")"
+	PLUS        = "+"
+	AT          = "@"
+	COLON       = ":"
+	DASH        = "-"
+	EOL         = "EOL"
+	STRING      = "STRING"
+
+	YYYYMMDD = "2006-01-02"
 )
 
 type Token struct {
@@ -97,11 +101,31 @@ type Todo struct {
 	// enclosed in parentheses, e.g., (A)
 	priority *string
 
-	// Optional: Date the todo was created at (YYYY-MM-DD)
-	creationDate *string
+	// Auto-generated: Date the todo was created at (YYYY-MM-DD)
+	creationDate time.Time
 	// Optional: Date the todo was completed (YYYY-MM-DD).
 	// Its existence is dependent on creationDate.
-	completionDate *string
+	completionDate *time.Time
+}
+
+func (t Todo) String() string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "{ description: %v, ", t.description)
+	fmt.Fprintf(&b, "creationDate: %s, ", t.creationDate.Format(YYYYMMDD))
+
+	if t.done != nil {
+		fmt.Fprintf(&b, "done: %c, ", *t.done)
+	}
+	if t.priority != nil {
+		fmt.Fprintf(&b, "priority: %s, ", *t.priority)
+	}
+	if t.completionDate != nil {
+		fmt.Fprintf(&b, "completionDate: %s", t.completionDate.Format(YYYYMMDD))
+	}
+
+	b.WriteString(" }")
+	return b.String()
 }
 
 func projectLiteral(current *int, input string) Token {
@@ -165,6 +189,22 @@ func isTagChar(current int, input string) bool {
 	return asStr == AT || asStr == PLUS || asStr == COLON
 }
 
+func isCapitalLetter(current int, input string) bool {
+	matched, err := regexp.MatchString(`[A-Z]{1}`, string(input[current]))
+	if err != nil {
+		fmt.Printf("regex for string %s with index %v\n", input, current)
+	}
+	return matched
+}
+
+func isNumeric(current int, input string) bool {
+	matched, err := regexp.MatchString(`[0-9]`, string(input[current]))
+	if err != nil {
+		fmt.Printf("regex for string %s with index %v\n", input, current)
+	}
+	return matched
+}
+
 func keyValueLiteral(current *int, input string) Token {
 	colonPos := *current
 
@@ -188,11 +228,49 @@ func keyValueLiteral(current *int, input string) Token {
 	return Token{tokenType: COLON, value: input[keyBegin:colonPos] + value}
 }
 
+func handlePriority(current *int, input string) (*Token, error) {
+	if string(input[*current+2]) != RIGHT_PAREN || !isCapitalLetter(*current+1, input) {
+		return nil, errors.New("bad priority value")
+	}
+	value := string(input[*current+1])
+	*current += 3
+	return &Token{tokenType: LEFT_PAREN, value: value}, nil
+}
+
+func handleCompletionDate(current *int, input string) (*Token, error) {
+	pos := strings.Index(input, DASH)
+	// Parse the year backwards
+	yearStart := pos - 4
+	year, month, day := "", "", ""
+	if yearStart >= 0 {
+		year = input[yearStart:pos]
+		pos++
+		month = input[pos : pos+2]
+		pos += 3
+		day = input[pos : pos+2]
+		pos += 3
+
+		_, yerr := regexp.MatchString(`[0-9]{4}`, year)
+		_, merr := regexp.MatchString(`[0-9]{2}`, month)
+		_, derr := regexp.MatchString(`[0-9]{2}`, day)
+
+		if yerr != nil || merr != nil || derr != nil {
+			return nil, errors.New("bad format for date")
+		}
+	}
+
+	*current += pos
+
+	fmt.Printf("year: %s, month: %s, day: %s\n", year, month, day)
+
+	return &Token{tokenType: DASH, value: year + "-" + month + "-" + day}, nil
+}
+
 func scan(input string) []Token {
 	current := 0 // current char
 	var tokens []Token
 
-	alphaRegex, _ := regexp.Compile(`[a-z]|[A-Z]`)
+	alphaRegex, _ := regexp.Compile(`\p{L}`)
 
 	for !isAtEnd(current, input) {
 		char := string(input[current])
@@ -201,9 +279,18 @@ func scan(input string) []Token {
 		case DONE_CHAR:
 			tokens = append(tokens, Token{tokenType: DONE_CHAR})
 		case LEFT_PAREN:
-			tokens = append(tokens, Token{tokenType: LEFT_PAREN, value: string(input[current+1])})
-		case RIGHT_PAREN:
-			tokens = append(tokens, Token{tokenType: RIGHT_PAREN})
+			token, err := handlePriority(&current, input)
+			if err != nil {
+				panic(err)
+			}
+			tokens = append(tokens, *token)
+		case DASH:
+			token, err := handleCompletionDate(&current, input)
+			fmt.Printf("token %v\n", token)
+			if err != nil {
+				panic(err)
+			}
+			tokens = append(tokens, *token)
 		case PLUS:
 			tokens = append(tokens, projectLiteral(&current, input))
 		case AT:
@@ -218,6 +305,9 @@ func scan(input string) []Token {
 				tokens = append(tokens, literal(&current, input))
 				// Move one step back to include the next tag character
 				current--
+			} else if isNumeric(current, input) {
+				current++
+				continue
 			} else {
 				log.Fatalf("Unexpected character: %s", char)
 			}
@@ -247,10 +337,15 @@ func handleKeyValueTag(token Token) (*Tag, error) {
 
 func Parse(input string) (*Todo, error) {
 	tokens := scan(input)
-	todo := &Todo{}
+	todo := &Todo{
+		creationDate: time.Now().UTC(),
+	}
 
 	for _, token := range tokens {
 		switch token.tokenType {
+		case LEFT_PAREN:
+			tmp := token.value
+			todo.priority = &tmp
 		case STRING:
 			todo.description.text = token.value
 		case PLUS:
@@ -266,13 +361,21 @@ func Parse(input string) (*Todo, error) {
 
 			// We have to clean up the description text since
 			// it's picking up on the key of the first key value tag
-			colonPos := strings.Index(token.value, ":")
+			colonPos := strings.Index(token.value, COLON)
 			keyToRemove := token.value[0:colonPos]
 
 			keyStartPos := strings.Index(todo.description.text, keyToRemove)
 			if keyStartPos >= 0 {
 				todo.description.text = todo.description.text[0:keyStartPos]
 			}
+		case DASH:
+			date, err := time.Parse(YYYYMMDD, token.value)
+			fmt.Printf("date: %s\n", date.Format(YYYYMMDD))
+			if err != nil {
+				fmt.Printf("bad date: %s\n", token.value)
+				return nil, errors.New("could not parse completion date")
+			}
+			todo.completionDate = &date
 		}
 	}
 
@@ -284,10 +387,3 @@ func Parse(input string) (*Todo, error) {
 
 	return todo, nil
 }
-
-// func peek(current int, input string) rune {
-// 	if isAtEnd(current, input) {
-// 		return EOL
-// 	}
-// 	return rune(input[current])
-// }

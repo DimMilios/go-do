@@ -16,6 +16,16 @@ func Test_Parse_Simple_Description(t *testing.T) {
 	}
 }
 
+func Test_Parse_Simple_Description_In_Greek(t *testing.T) {
+	expected := "απλή περιγραφή"
+	todo, _ := Parse(expected)
+	got := todo.description.text
+
+	if strings.Compare(got, expected) != 0 {
+		t.Fatalf("Description text is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, got)
+	}
+}
+
 func Test_Parse_Should_Ignore_Done(t *testing.T) {
 	simple := "x simple description"
 	expected := "simple description"
@@ -241,4 +251,54 @@ func Test_Parse_Description_With_Multiple_Of_Each_Tag(t *testing.T) {
 		fmt.Printf("Todo: %v\n", todo)
 		t.Fatalf("Couldn't parse mixed types of tags. Tags: %v", todo.description.tags)
 	}
+}
+
+func Test_Parse_Priority(t *testing.T) {
+	input := "(A) simple description"
+	expected := "A"
+	todo, _ := Parse(input)
+
+	if todo.priority == nil || strings.Compare(*todo.priority, expected) != 0 {
+		t.Fatalf("Priority is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, *todo.priority)
+	}
+}
+
+func Test_Parse_Parentheses_In_Description(t *testing.T) {
+	input := "x simple (A) description"
+	todo, _ := Parse(input)
+
+	if todo.priority != nil {
+		t.Fatal("Todo should not have priority.")
+	}
+}
+
+func Test_Parse_Bad_Priority_Should_Panic(t *testing.T) {
+	input := "x (AB) simple description"
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered:", r)
+		}
+	}()
+	Parse(input)
+}
+
+func Test_Parse_Completion_Date(t *testing.T) {
+	input := "2016-05-20 simple description"
+	expected := "2016-05-20"
+	todo, err := Parse(input)
+	fmt.Printf("Todo: %v\n", todo)
+
+	if todo.completionDate == nil || err != nil {
+		t.Fatalf("Priority is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, (*todo.completionDate).Format(YYYYMMDD))
+	}
+}
+
+func Test_Parse_Bad_Date_Should_Panic(t *testing.T) {
+	input := "2016-5-20 simple description"
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered:", r)
+		}
+	}()
+	Parse(input)
 }
