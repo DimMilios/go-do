@@ -5,6 +5,7 @@ A todo cli application based on the [todo.txt](https://github.com/todotxt/todo.t
 ### General
 - [] Display all todos command (`--all` or `-a`)
 - [] Create todo command (`--create` or `-c`)
+- [] Export todos to `.txt` file specifying a file name (`--export` or `-e` followed by `--name` or `-n` for the file name)
 - [] Help command (lists available commands + a description for the todo.txt format)
 
 ### Todos

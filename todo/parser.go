@@ -4,39 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	_ "log"
 	"regexp"
 	"strings"
 	"time"
 )
 
 const (
-	CHAR_A      = "A"
-	CHAR_B      = "B"
-	CHAR_C      = "C"
-	CHAR_D      = "D"
-	CHAR_E      = "E"
-	CHAR_F      = "F"
-	CHAR_G      = "G"
-	CHAR_H      = "H"
-	CHAR_I      = "I"
-	CHAR_J      = "J"
-	CHAR_K      = "K"
-	CHAR_L      = "L"
-	CHAR_M      = "M"
-	CHAR_N      = "N"
-	CHAR_O      = "O"
-	CHAR_P      = "P"
-	CHAR_Q      = "Q"
-	CHAR_R      = "R"
-	CHAR_S      = "S"
-	CHAR_T      = "T"
-	CHAR_U      = "U"
-	CHAR_V      = "V"
-	CHAR_W      = "W"
-	CHAR_X      = "X"
-	CHAR_Y      = "Y"
-	CHAR_Z      = "Z"
 	DONE_CHAR   = "x"
 	LEFT_PAREN  = "("
 	RIGHT_PAREN = ")"
@@ -73,55 +46,62 @@ func (t TagType) String() string {
 
 type Tag struct {
 	// Project, context or key-value.
-	tagType TagType
-	value   string
+	TagType TagType
+	Value   string
 
-	// A key exists if a tag is a key-value.
-	key *string
+	// A Key exists if a tag is a Key-value.
+	Key *string
 }
 
 func (t Tag) String() string {
-	return fmt.Sprintf("{ tagType: %v, value: %s, key: %s }", t.tagType, t.value, *t.key)
+	if t.Key != nil {
+		return fmt.Sprintf("{ tagType: %v, value: %s, key: %s }", t.TagType, t.Value, *t.Key)
+	}
+	return fmt.Sprintf("{ tagType: %v, value: %s, key: %v }", t.TagType, t.Value, t.Key)
 }
 
 type Description struct {
 	// Text content for the description.
-	text string
-	// List of description's tags.
-	tags []Tag
+	Text string
+	// List of description's Tags.
+	Tags []Tag
+}
+
+func (d Description) String() string {
+	return fmt.Sprintf("{ text: %s, tags: %v }", d.Text, d.Tags)
 }
 
 type Todo struct {
 	// Mandatory: Description + tags section of the todo.
-	description Description
+	Description Description
 
 	// Optional: Todo is complete. Can get 'x' as value
-	done *rune
-	// Optional: The todo's priority is defined as a capital letter (A-Z)
+	Done *rune
+	// Optional: The todo's Priority is defined as a capital letter (A-Z)
 	// enclosed in parentheses, e.g., (A)
-	priority *string
+	Priority *string
 
 	// Auto-generated: Date the todo was created at (YYYY-MM-DD)
-	creationDate time.Time
+	CreationDate time.Time
 	// Optional: Date the todo was completed (YYYY-MM-DD).
 	// Its existence is dependent on creationDate.
-	completionDate *time.Time
+	CompletionDate *time.Time
 }
 
 func (t Todo) String() string {
 	var b strings.Builder
 
-	fmt.Fprintf(&b, "{ description: %v, ", t.description)
-	fmt.Fprintf(&b, "creationDate: %s, ", t.creationDate.Format(YYYYMMDD))
+	fmt.Fprintf(&b, "{ description: %v, ", t.Description)
+	fmt.Fprintf(&b, "creationDate: %s, ", t.CreationDate.Format(YYYYMMDD))
 
-	if t.done != nil {
-		fmt.Fprintf(&b, "done: %c, ", *t.done)
+	if t.Done != nil {
+		fmt.Fprintf(&b, "done: %c, ", *t.Done)
 	}
-	if t.priority != nil {
-		fmt.Fprintf(&b, "priority: %s, ", *t.priority)
+	if t.Priority != nil {
+		fmt.Fprintf(&b, "priority: %s, ", *t.Priority)
 	}
-	if t.completionDate != nil {
-		fmt.Fprintf(&b, "completionDate: %s", t.completionDate.Format(YYYYMMDD))
+	if t.CompletionDate != nil {
+		fmt.Fprintf(&b, "completionDate: %s", t.CompletionDate.Format(YYYYMMDD))
 	}
 
 	b.WriteString(" }")
@@ -139,7 +119,7 @@ func projectLiteral(current *int, input string) Token {
 	}
 
 	content += input[startIndex+1 : *current]
-	fmt.Printf("Project Literal==== Content: %s, current: %v\n", content, *current)
+	log.Printf("Project Literal==== Content: %s, current: %v\n", content, *current)
 	return Token{tokenType: PLUS, value: content}
 }
 
@@ -154,22 +134,8 @@ func contextLiteral(current *int, input string) Token {
 	}
 
 	content += input[startIndex+1 : *current]
-	fmt.Printf("Context Literal==== Content: %s, current: %v\n", content, *current)
+	log.Printf("Context Literal==== Content: %s, current: %v\n", content, *current)
 	return Token{tokenType: AT, value: content}
-}
-
-func literal(current *int, input string) Token {
-	var content string
-	var startIndex = *current
-	for ; !isAtEnd(*current, input); *current++ {
-		if isTagChar(*current, input) {
-			break
-		}
-	}
-
-	content += input[startIndex:*current]
-	fmt.Printf("String Literal==== Content: %s, current: %v\n", content, *current)
-	return Token{tokenType: STRING, value: content}
 }
 
 func isAtEnd(current int, input string) bool {
@@ -179,28 +145,15 @@ func isAtEnd(current int, input string) bool {
 func isWhiteSpace(current int, input string) bool {
 	matched, err := regexp.MatchString(`(\s+)`, string(input[current]))
 	if err != nil {
-		fmt.Printf("regex for string %s with index %v\n", input, current)
+		log.Printf("regex for string %s with index %v\n", input, current)
 	}
 	return matched
-}
-
-func isTagChar(current int, input string) bool {
-	asStr := string(input[current])
-	return asStr == AT || asStr == PLUS || asStr == COLON
 }
 
 func isCapitalLetter(current int, input string) bool {
 	matched, err := regexp.MatchString(`[A-Z]{1}`, string(input[current]))
 	if err != nil {
-		fmt.Printf("regex for string %s with index %v\n", input, current)
-	}
-	return matched
-}
-
-func isNumeric(current int, input string) bool {
-	matched, err := regexp.MatchString(`[0-9]`, string(input[current]))
-	if err != nil {
-		fmt.Printf("regex for string %s with index %v\n", input, current)
+		log.Printf("regex for string %s with index %v\n", input, current)
 	}
 	return matched
 }
@@ -223,7 +176,7 @@ func keyValueLiteral(current *int, input string) Token {
 	}
 	value := input[colonPos:i]
 	*current += len(value)
-	fmt.Printf("KV Token: { key: %s, value: %s }\n", input[keyBegin:colonPos], value)
+	log.Printf("KV Token: { key: %s, value: %s }\n", input[keyBegin:colonPos], value)
 
 	return Token{tokenType: COLON, value: input[keyBegin:colonPos] + value}
 }
@@ -239,42 +192,40 @@ func handlePriority(current *int, input string) (*Token, error) {
 
 func handleCompletionDate(current *int, input string) (*Token, error) {
 	pos := strings.Index(input, DASH)
+	log.Printf("Pos starting value: %d\n", pos)
 	// Parse the year backwards
 	yearStart := pos - 4
-	year, month, day := "", "", ""
-	if yearStart >= 0 {
-		year = input[yearStart:pos]
-		pos++
-		month = input[pos : pos+2]
-		pos += 3
-		day = input[pos : pos+2]
-		pos += 3
-
-		_, yerr := regexp.MatchString(`[0-9]{4}`, year)
-		_, merr := regexp.MatchString(`[0-9]{2}`, month)
-		_, derr := regexp.MatchString(`[0-9]{2}`, day)
-
-		if yerr != nil || merr != nil || derr != nil {
-			return nil, errors.New("bad format for date")
-		}
+	dateValue := ""
+	if yearStart < 0 {
+		return nil, errors.New("couldn't parse date")
 	}
 
-	*current += pos
+	year, month, day := "", "", ""
+	year = input[yearStart:pos]
+	pos++
+	month = input[pos : pos+2]
+	pos += 3
+	day = input[pos : pos+2]
+	pos += 3
 
-	fmt.Printf("year: %s, month: %s, day: %s\n", year, month, day)
+	dateValue = year + "-" + month + "-" + day
+	isValid, err := regexp.MatchString(`^\d{4}-\d{2}-\d{2}$`, dateValue)
+	*current += pos - *current - 1
+	log.Printf("Slice from new current value: %s, completion date: %s\n", input[*current:], dateValue)
 
-	return &Token{tokenType: DASH, value: year + "-" + month + "-" + day}, nil
+	if isValid && err != nil {
+		return nil, errors.New("bad format for date")
+	}
+
+	return &Token{tokenType: DASH, value: dateValue}, nil
 }
 
 func scan(input string) []Token {
 	current := 0 // current char
-	var tokens []Token
-
-	alphaRegex, _ := regexp.Compile(`\p{L}`)
+	tokens := []Token{{tokenType: STRING, value: input}}
 
 	for !isAtEnd(current, input) {
 		char := string(input[current])
-		fmt.Printf("Char: %s\n", char)
 		switch char {
 		case DONE_CHAR:
 			tokens = append(tokens, Token{tokenType: DONE_CHAR})
@@ -286,7 +237,6 @@ func scan(input string) []Token {
 			tokens = append(tokens, *token)
 		case DASH:
 			token, err := handleCompletionDate(&current, input)
-			fmt.Printf("token %v\n", token)
 			if err != nil {
 				panic(err)
 			}
@@ -297,20 +247,7 @@ func scan(input string) []Token {
 			tokens = append(tokens, contextLiteral(&current, input))
 		case COLON:
 			tokens = append(tokens, keyValueLiteral(&current, input))
-		case " ", "\r", "\t", "\n":
-			break
 		default:
-			isAlpha, _ := regexp.MatchString(alphaRegex.String(), string(input[current]))
-			if isAlpha {
-				tokens = append(tokens, literal(&current, input))
-				// Move one step back to include the next tag character
-				current--
-			} else if isNumeric(current, input) {
-				current++
-				continue
-			} else {
-				log.Fatalf("Unexpected character: %s", char)
-			}
 		}
 
 		current++
@@ -321,7 +258,7 @@ func scan(input string) []Token {
 func handleKeyValueTag(token Token) (*Tag, error) {
 	colonPos := strings.Index(token.value, ":")
 	if colonPos < 0 {
-		fmt.Printf("String doesn't contain colon. String: %s", token.value)
+		log.Printf("String doesn't contain colon. String: %s", token.value)
 		return nil, errors.New("colon character not found in string")
 	}
 	key := token.value[0:colonPos]
@@ -330,59 +267,98 @@ func handleKeyValueTag(token Token) (*Tag, error) {
 		return nil, errors.New("value cannot be empty")
 	}
 
-	kvTag := Tag{tagType: KeyValue, key: &key, value: value}
-	fmt.Printf("kvTag: %v\n", kvTag)
+	kvTag := Tag{TagType: KeyValue, Key: &key, Value: value}
+	log.Printf("kvTag: %v\n", kvTag)
 	return &kvTag, nil
 }
 
-func Parse(input string) (*Todo, error) {
-	tokens := scan(input)
-	todo := &Todo{
-		creationDate: time.Now().UTC(),
+func stripRight(desc string, val string, input string) string {
+	var b strings.Builder
+	pos := strings.Index(desc, val)
+	if pos >= 0 {
+		before := desc[:pos-1]
+		b.WriteString(before)
+	} else {
+		b.WriteString(desc)
 	}
+	return strings.TrimSpace(b.String())
+}
+
+func stripLeft(desc string, val string, input string) string {
+	var b strings.Builder
+	pos := strings.Index(desc, val)
+	if pos >= 0 {
+		afterLen := len(val) + 1
+		if afterLen < len(input) {
+			after := input[afterLen:]
+			b.WriteString(after)
+		}
+	} else {
+		b.WriteString(desc)
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func Parse(input string) (*Todo, error) {
+	log.Printf("Got :%s\n", input)
+
+	todo := &Todo{
+		CreationDate: time.Now().UTC(),
+	}
+
+	// Handle todo completion
+	if string(input[0]) == DONE_CHAR && len(input) > 1 && string(input[1]) == " " {
+		x := rune(DONE_CHAR[0])
+		todo.Done = &x
+		input = input[2:]
+	}
+	tokens := scan(input)
 
 	for _, token := range tokens {
 		switch token.tokenType {
 		case LEFT_PAREN:
 			tmp := token.value
-			todo.priority = &tmp
+			todo.Priority = &tmp
 		case STRING:
-			todo.description.text = token.value
+			todo.Description.Text = token.value
 		case PLUS:
-			todo.description.tags = append(todo.description.tags, Tag{tagType: Project, value: token.value})
+			todo.Description.Tags = append(todo.Description.Tags, Tag{TagType: Project, Value: token.value})
 		case AT:
-			todo.description.tags = append(todo.description.tags, Tag{tagType: Context, value: token.value})
+			todo.Description.Tags = append(todo.Description.Tags, Tag{TagType: Context, Value: token.value})
 		case COLON:
 			kvTag, err := handleKeyValueTag(token)
 			if err != nil {
 				return nil, err
 			}
-			todo.description.tags = append(todo.description.tags, *kvTag)
+			todo.Description.Tags = append(todo.Description.Tags, *kvTag)
 
 			// We have to clean up the description text since
 			// it's picking up on the key of the first key value tag
 			colonPos := strings.Index(token.value, COLON)
 			keyToRemove := token.value[0:colonPos]
 
-			keyStartPos := strings.Index(todo.description.text, keyToRemove)
+			keyStartPos := strings.Index(todo.Description.Text, keyToRemove)
 			if keyStartPos >= 0 {
-				todo.description.text = todo.description.text[0:keyStartPos]
+				todo.Description.Text = todo.Description.Text[0:keyStartPos]
 			}
 		case DASH:
 			date, err := time.Parse(YYYYMMDD, token.value)
-			fmt.Printf("date: %s\n", date.Format(YYYYMMDD))
+			log.Printf("date: %s\n", date.Format(YYYYMMDD))
 			if err != nil {
-				fmt.Printf("bad date: %s\n", token.value)
+				log.Printf("bad date: %s\n", token.value)
 				return nil, errors.New("could not parse completion date")
 			}
-			todo.completionDate = &date
+			todo.Description.Text = stripLeft(todo.Description.Text, token.value, input)
+			todo.CompletionDate = &date
 		}
 	}
 
-	// Handle todo completion
-	if string(input[0]) == DONE_CHAR && len(input) > 1 && string(input[1]) == " " {
-		x := rune(DONE_CHAR[0])
-		todo.done = &x
+	if todo.Priority != nil {
+		todo.Description.Text = todo.Description.Text[4:]
+	}
+
+	for _, t := range todo.Description.Tags {
+		todo.Description.Text = stripRight(todo.Description.Text, t.Value, input)
 	}
 
 	return todo, nil
