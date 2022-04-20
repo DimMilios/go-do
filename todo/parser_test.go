@@ -46,10 +46,8 @@ func Test_Parse_Mark_As_Done(t *testing.T) {
 	input := "x walk dog"
 	todo, _ := Parse(input)
 
-	got := string(*todo.Done)
-
-	if todo.Done == nil || got != DONE_CHAR {
-		t.Fatalf("Completion character at index 0 failed to mark todo as done. Got: %s\n", got)
+	if !todo.Done {
+		t.Fatal("Completion character at index 0 failed to mark todo as done.")
 	}
 }
 
@@ -57,7 +55,7 @@ func Test_Parse_Mark_As_Done_Correct_Index(t *testing.T) {
 	input := "walk x dog"
 	todo, _ := Parse(input)
 
-	if todo.Done != nil {
+	if todo.Done {
 		t.Fatal("Should not consider completion char at wrong index as valid.")
 	}
 }
@@ -66,7 +64,7 @@ func Test_Parse_Mark_As_Done_Is_Followed_By_Space(t *testing.T) {
 	input := "xx walk dog"
 	todo, _ := Parse(input)
 
-	if todo.Done != nil {
+	if todo.Done {
 		t.Fatal("Completion char should be followed by a space.")
 	}
 }
@@ -169,7 +167,7 @@ func Test_Parse_Mark_Done_Complex_Description(t *testing.T) {
 		}
 	}
 
-	if len(tags) != 2 || todo.Done == nil {
+	if len(tags) != 2 || !todo.Done {
 		t.Fatalf("Couldn't mark todo with tagged description as done. Todo: %v", todo)
 	}
 }
@@ -339,7 +337,7 @@ func Test_Parse_Complete_Todo_Input(t *testing.T) {
 		t.Fatalf("Description incorrect. Expected: \"%s\", but got: \"%s\"\n", expectedDesc, todo.Description.Text)
 	}
 
-	if todo.Done == nil || !hasValue(todo.Priority, "A") {
+	if !todo.Done || !hasValue(todo.Priority, "A") {
 		t.Fatal("Todo is not done or has incorrect priority value.")
 	}
 

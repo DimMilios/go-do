@@ -9,22 +9,27 @@ import (
 	"time"
 )
 
-const (
-	DONE_CHAR   = "x"
-	LEFT_PAREN  = "("
-	RIGHT_PAREN = ")"
-	PLUS        = "+"
-	AT          = "@"
-	COLON       = ":"
-	DASH        = "-"
-	EOL         = "EOL"
-	STRING      = "STRING"
+const YYYYMMDD = "2006-01-02"
 
-	YYYYMMDD = "2006-01-02"
+type TokenType int
+
+const (
+	DONE_CHAR TokenType = iota
+	LEFT_PAREN
+	RIGHT_PAREN
+	PLUS
+	AT
+	COLON
+	DASH
+	STRING
 )
 
+func (t TokenType) String() string {
+	return [...]string{"x", "(", ")", "+", "@", ":", "-", "STRING"}[t]
+}
+
 type Token struct {
-	tokenType string
+	tokenType TokenType
 	value     string
 }
 
@@ -75,8 +80,8 @@ type Todo struct {
 	// Mandatory: Description + tags section of the todo.
 	Description Description
 
-	// Optional: Todo is complete. Can get 'x' as value
-	Done *rune
+	// Optional: Todo is complete
+	Done bool
 	// Optional: The todo's Priority is defined as a capital letter (A-Z)
 	// enclosed in parentheses, e.g., (A)
 	Priority *string
@@ -93,10 +98,8 @@ func (t Todo) String() string {
 
 	fmt.Fprintf(&b, "{ description: %v, ", t.Description)
 	fmt.Fprintf(&b, "creationDate: %s, ", t.CreationDate.Format(YYYYMMDD))
+	fmt.Fprintf(&b, "done: %v, ", t.Done)
 
-	if t.Done != nil {
-		fmt.Fprintf(&b, "done: %c, ", *t.Done)
-	}
 	if t.Priority != nil {
 		fmt.Fprintf(&b, "priority: %s, ", *t.Priority)
 	}
@@ -182,7 +185,7 @@ func keyValueLiteral(current *int, input string) Token {
 }
 
 func handlePriority(current *int, input string) (*Token, error) {
-	if string(input[*current+2]) != RIGHT_PAREN || !isCapitalLetter(*current+1, input) {
+	if string(input[*current+2]) != RIGHT_PAREN.String() || !isCapitalLetter(*current+1, input) {
 		return nil, errors.New("bad priority value")
 	}
 	value := string(input[*current+1])
@@ -191,7 +194,7 @@ func handlePriority(current *int, input string) (*Token, error) {
 }
 
 func handleCompletionDate(current *int, input string) (*Token, error) {
-	pos := strings.Index(input, DASH)
+	pos := strings.Index(input, DASH.String())
 	log.Printf("Pos starting value: %d\n", pos)
 	// Parse the year backwards
 	yearStart := pos - 4
@@ -227,25 +230,25 @@ func scan(input string) []Token {
 	for !isAtEnd(current, input) {
 		char := string(input[current])
 		switch char {
-		case DONE_CHAR:
+		case DONE_CHAR.String():
 			tokens = append(tokens, Token{tokenType: DONE_CHAR})
-		case LEFT_PAREN:
+		case LEFT_PAREN.String():
 			token, err := handlePriority(&current, input)
 			if err != nil {
 				panic(err)
 			}
 			tokens = append(tokens, *token)
-		case DASH:
+		case DASH.String():
 			token, err := handleCompletionDate(&current, input)
 			if err != nil {
 				panic(err)
 			}
 			tokens = append(tokens, *token)
-		case PLUS:
+		case PLUS.String():
 			tokens = append(tokens, projectLiteral(&current, input))
-		case AT:
+		case AT.String():
 			tokens = append(tokens, contextLiteral(&current, input))
-		case COLON:
+		case COLON.String():
 			tokens = append(tokens, keyValueLiteral(&current, input))
 		default:
 		}
@@ -300,16 +303,16 @@ func stripLeft(desc string, val string, input string) string {
 }
 
 func Parse(input string) (*Todo, error) {
-	log.Printf("Got :%s\n", input)
+	log.Printf("Got: %s\n", input)
 
 	todo := &Todo{
+		Done:         false,
 		CreationDate: time.Now().UTC(),
 	}
 
 	// Handle todo completion
-	if string(input[0]) == DONE_CHAR && len(input) > 1 && string(input[1]) == " " {
-		x := rune(DONE_CHAR[0])
-		todo.Done = &x
+	if string(input[0]) == DONE_CHAR.String() && len(input) > 1 && string(input[1]) == " " {
+		todo.Done = true
 		input = input[2:]
 	}
 	tokens := scan(input)
@@ -334,7 +337,7 @@ func Parse(input string) (*Todo, error) {
 
 			// We have to clean up the description text since
 			// it's picking up on the key of the first key value tag
-			colonPos := strings.Index(token.value, COLON)
+			colonPos := strings.Index(token.value, COLON.String())
 			keyToRemove := token.value[0:colonPos]
 
 			keyStartPos := strings.Index(todo.Description.Text, keyToRemove)
