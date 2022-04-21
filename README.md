@@ -3,16 +3,17 @@ A todo cli application based on the [todo.txt](https://github.com/todotxt/todo.t
 
 ## Features
 ### General
-- [] Display all todos command (`--all` or `-a`)
-- [] Create todo command (`--create` or `-c`)
-- [] Export todos to `.txt` file specifying a file name (`--export` or `-e` followed by `--name` or `-n` for the file name)
+- [x] Display all todos command (`show`)
+    - [] Pass a filter (e.g. show todos of context A or project B etc.) 
+- [x] Create todo command (`create` or `c`)
+- [] Export todos to `.txt` file specifying a file name (`export` or `e` followed by `--name` or `-n` for the file name)
 - [] Help command (lists available commands + a description for the todo.txt format)
 
 ### Todos
-- [] Add a todo
+- [x] Add a todo
 - [] Update a todo
 - [] Delete a todo
-- [] List all todos
+- [x] List all todos
 - [] Sort todos
   - [] By priority
   - [] By completion status

@@ -111,6 +111,38 @@ func (t Todo) String() string {
 	return b.String()
 }
 
+func (t Todo) Format() string {
+	var b strings.Builder
+
+	if t.Done {
+		fmt.Fprintf(&b, "x ")
+	}
+
+	if t.Priority != nil {
+		fmt.Fprintf(&b, "(%s) ", *t.Priority)
+	}
+
+	if t.CompletionDate != nil {
+		fmt.Fprintf(&b, "%s ", t.CompletionDate.Format(YYYYMMDD))
+	}
+	fmt.Fprintf(&b, "%s ", t.CreationDate.Format(YYYYMMDD))
+
+	fmt.Fprintf(&b, "%s ", t.Description.Text)
+
+	for _, t := range t.Description.Tags {
+		switch t.TagType {
+		case Context:
+			fmt.Fprintf(&b, "@%s ", t.Value)
+		case Project:
+			fmt.Fprintf(&b, "+%s ", t.Value)
+		case KeyValue:
+			fmt.Fprintf(&b, "%s:%s ", *t.Key, t.Value)
+		}
+	}
+
+	return strings.TrimRight(b.String(), " ")
+}
+
 func projectLiteral(current *int, input string) Token {
 	var content string
 
@@ -193,7 +225,7 @@ func handlePriority(current *int, input string) (*Token, error) {
 	return &Token{tokenType: LEFT_PAREN, value: value}, nil
 }
 
-func handleCompletionDate(current *int, input string) (*Token, error) {
+func handleDate(current *int, input string) (*Token, error) {
 	pos := strings.Index(input, DASH.String())
 	log.Printf("Pos starting value: %d\n", pos)
 	// Parse the year backwards
@@ -213,7 +245,8 @@ func handleCompletionDate(current *int, input string) (*Token, error) {
 
 	dateValue = year + "-" + month + "-" + day
 	isValid, err := regexp.MatchString(`^\d{4}-\d{2}-\d{2}$`, dateValue)
-	*current += pos - *current - 1
+	// subtract 4 for year
+	*current += len(dateValue) - 5
 	log.Printf("Slice from new current value: %s, completion date: %s\n", input[*current:], dateValue)
 
 	if isValid && err != nil {
@@ -239,7 +272,7 @@ func scan(input string) []Token {
 			}
 			tokens = append(tokens, *token)
 		case DASH.String():
-			token, err := handleCompletionDate(&current, input)
+			token, err := handleDate(&current, input)
 			if err != nil {
 				panic(err)
 			}

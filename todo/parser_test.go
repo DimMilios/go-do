@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 	"testing"
+	"time"
 )
 
 func init() {
@@ -17,7 +18,7 @@ func Test_Parse_Simple_Description(t *testing.T) {
 	got := todo.Description.Text
 
 	if strings.Compare(got, expected) != 0 {
-		t.Fatalf("Description text is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, got)
+		t.Errorf("Description text is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, got)
 	}
 }
 
@@ -27,7 +28,7 @@ func Test_Parse_Simple_Description_In_Greek(t *testing.T) {
 	got := todo.Description.Text
 
 	if strings.Compare(got, expected) != 0 {
-		t.Fatalf("Description text is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, got)
+		t.Errorf("Description text is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, got)
 	}
 }
 
@@ -38,7 +39,7 @@ func Test_Parse_Should_Ignore_Done(t *testing.T) {
 	got := todo.Description.Text
 
 	if strings.Compare(got, expected) != 0 {
-		t.Fatalf("Description text is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, got)
+		t.Errorf("Description text is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, got)
 	}
 }
 
@@ -47,7 +48,7 @@ func Test_Parse_Mark_As_Done(t *testing.T) {
 	todo, _ := Parse(input)
 
 	if !todo.Done {
-		t.Fatal("Completion character at index 0 failed to mark todo as done.")
+		t.Error("Completion character at index 0 failed to mark todo as done.")
 	}
 }
 
@@ -56,7 +57,7 @@ func Test_Parse_Mark_As_Done_Correct_Index(t *testing.T) {
 	todo, _ := Parse(input)
 
 	if todo.Done {
-		t.Fatal("Should not consider completion char at wrong index as valid.")
+		t.Error("Should not consider completion char at wrong index as valid.")
 	}
 }
 
@@ -65,7 +66,7 @@ func Test_Parse_Mark_As_Done_Is_Followed_By_Space(t *testing.T) {
 	todo, _ := Parse(input)
 
 	if todo.Done {
-		t.Fatal("Completion char should be followed by a space.")
+		t.Error("Completion char should be followed by a space.")
 	}
 }
 
@@ -84,7 +85,7 @@ func Test_Parse_Description_With_Project_Tag(t *testing.T) {
 
 	if projTag.Value != expected {
 		fmt.Printf("Project tag: %v\n", projTag)
-		t.Fatalf("Couldn't parse project tag. Expected: \"%s\", but got: \"%s\"\n", expected, projTag.Value)
+		t.Errorf("Couldn't parse project tag. Expected: \"%s\", but got: \"%s\"\n", expected, projTag.Value)
 	}
 }
 
@@ -101,7 +102,7 @@ func Test_Parse_Description_With_Two_Project_Tags(t *testing.T) {
 
 	if len(projTags) != 2 {
 		fmt.Printf("Todo: %v\n", todo)
-		t.Fatalf("Couldn't parse many project tags. Tags: %v", projTags)
+		t.Errorf("Couldn't parse many project tags. Tags: %v", projTags)
 	}
 }
 
@@ -118,7 +119,7 @@ func Test_Parse_Description_With_Context_Tag(t *testing.T) {
 	}
 
 	if ctxTag.Value != expected {
-		t.Fatalf("Couldn't parse context tag. Expected: \"%s\", but got: \"%s\"\n", expected, ctxTag.Value)
+		t.Errorf("Couldn't parse context tag. Expected: \"%s\", but got: \"%s\"\n", expected, ctxTag.Value)
 	}
 }
 
@@ -135,7 +136,7 @@ func Test_Parse_Description_With_Two_Context_Tags(t *testing.T) {
 
 	if len(ctxTags) != 2 {
 		fmt.Printf("Todo: %v\n", todo)
-		t.Fatalf("Couldn't parse many context tags. Tags: %v", ctxTags)
+		t.Errorf("Couldn't parse many context tags. Tags: %v", ctxTags)
 	}
 }
 
@@ -152,7 +153,7 @@ func Test_Parse_Description_With_Project_And_Context_Tags(t *testing.T) {
 
 	if len(tags) != 2 {
 		fmt.Printf("Todo: %v\n", todo)
-		t.Fatalf("Couldn't parse mixed project and context tags. Tags: %v", tags)
+		t.Errorf("Couldn't parse mixed project and context tags. Tags: %v", tags)
 	}
 }
 
@@ -168,7 +169,7 @@ func Test_Parse_Mark_Done_Complex_Description(t *testing.T) {
 	}
 
 	if len(tags) != 2 || !todo.Done {
-		t.Fatalf("Couldn't mark todo with tagged description as done. Todo: %v", todo)
+		t.Errorf("Couldn't mark todo with tagged description as done. Todo: %v", todo)
 	}
 }
 
@@ -186,7 +187,7 @@ func Test_Parse_Description_With_Key_Value_Tag(t *testing.T) {
 	}
 
 	if keyValueTag.Key == nil || *keyValueTag.Key != expectedKey || keyValueTag.Value != expectedVal {
-		t.Fatalf("Couldn't parse key value tag. Tag: %v", keyValueTag)
+		t.Errorf("Couldn't parse key value tag. Tag: %v", keyValueTag)
 	}
 }
 
@@ -195,7 +196,7 @@ func Test_Parse_Key_Value_Tag_Empty_Value(t *testing.T) {
 	_, err := Parse(input)
 
 	if err == nil {
-		t.Fatal("Trying to pass a key value tag without suppling a value should return an error.")
+		t.Error("Trying to pass a key value tag without suppling a value should return an error.")
 	}
 }
 
@@ -212,7 +213,7 @@ func Test_Parse_Description_With_Many_Kv_Tags(t *testing.T) {
 
 	if len(kvTags) != 3 {
 		fmt.Printf("Todo: %v\n", todo)
-		t.Fatalf("Couldn't parse many key value tags. Tags: %v", kvTags)
+		t.Errorf("Couldn't parse many key value tags. Tags: %v", kvTags)
 	}
 }
 
@@ -222,7 +223,7 @@ func Test_Description_Doesnt_Contain_Key_Of_Kv_Tag(t *testing.T) {
 	todo, _ := Parse(input)
 
 	if todo == nil || todo.Description.Text != expected {
-		t.Fatal("Key of key value tag shouldn't be included to the text description.")
+		t.Error("Key of key value tag shouldn't be included to the text description.")
 	}
 }
 
@@ -232,7 +233,7 @@ func Test_Parse_Description_With_All_Tags(t *testing.T) {
 
 	if len(todo.Description.Tags) != 3 {
 		fmt.Printf("Todo: %v\n", todo)
-		t.Fatalf("Couldn't parse mixed types of tags. Tags: %v", todo.Description.Tags)
+		t.Errorf("Couldn't parse mixed types of tags. Tags: %v", todo.Description.Tags)
 	}
 }
 
@@ -242,7 +243,7 @@ func Test_Parse_Description_With_All_Tags_Reordered(t *testing.T) {
 
 	if len(todo.Description.Tags) != 3 {
 		fmt.Printf("Todo: %v\n", todo)
-		t.Fatalf("Couldn't parse mixed types of tags. Tags: %v", todo.Description.Tags)
+		t.Errorf("Couldn't parse mixed types of tags. Tags: %v", todo.Description.Tags)
 	}
 }
 
@@ -252,7 +253,7 @@ func Test_Parse_Description_With_Multiple_Of_Each_Tag(t *testing.T) {
 
 	if len(todo.Description.Tags) != 6 {
 		fmt.Printf("Todo: %v\n", todo)
-		t.Fatalf("Couldn't parse mixed types of tags. Tags: %v", todo.Description.Tags)
+		t.Errorf("Couldn't parse mixed types of tags. Tags: %v", todo.Description.Tags)
 	}
 }
 
@@ -263,7 +264,7 @@ func Test_Parse_Priority(t *testing.T) {
 	todo, _ := Parse(input)
 
 	if todo.Priority == nil || strings.Compare(*todo.Priority, expected) != 0 || strings.Compare(todo.Description.Text, expectedDescription) != 0 {
-		t.Fatalf("Priority is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, *todo.Priority)
+		t.Errorf("Priority is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, *todo.Priority)
 	}
 }
 
@@ -277,14 +278,30 @@ func Test_Parse_Bad_Priority_Should_Panic(t *testing.T) {
 	Parse(input)
 }
 
-func Test_Parse_Completion_Date(t *testing.T) {
+func Parse_Completion_Date(t *testing.T) {
 	input := "2016-05-20 simple description"
 	expected := "2016-05-20"
 	todo, err := Parse(input)
 	fmt.Printf("Todo: %v\n", todo)
 
 	if todo.CompletionDate == nil || err != nil {
-		t.Fatalf("Priority is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, (*todo.CompletionDate).Format(YYYYMMDD))
+		t.Errorf("Priority is incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, (*todo.CompletionDate).Format(YYYYMMDD))
+	}
+}
+
+func Test_Parse_Creation_Date(t *testing.T) {
+	input := "x (A) 2022-04-20 2022-04-21 update screenshots +proj"
+	createDate := time.Now().Format(YYYYMMDD)
+	complDate := "2022-04-21"
+	todo, err := Parse(input)
+	fmt.Printf("Todo: %v\n", todo)
+
+	if strings.Compare(todo.CreationDate.Format(YYYYMMDD), createDate) != 0 {
+		t.Errorf("Bad creation date. Expected: \"%s\", but got: \"%s\"\n", createDate, (todo.CreationDate).Format(YYYYMMDD))
+	}
+
+	if todo.CompletionDate == nil || err != nil {
+		t.Errorf("Bad completion date. Expected: \"%s\", but got: \"%s\"\n", complDate, (*todo.CompletionDate).Format(YYYYMMDD))
 	}
 }
 
@@ -322,35 +339,35 @@ func Test_Parse_Complete_Todo_Input(t *testing.T) {
 	todo, _ := Parse(input)
 
 	if todo.CompletionDate == nil {
-		t.Fatal("Bad completion date.")
+		t.Error("Bad completion date.")
 	} else {
 		s := (*todo.CompletionDate).Format(YYYYMMDD)
 		expected := "2016-04-30"
 		if !hasValue(&s, expected) {
-			t.Fatalf("Completion date incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, s)
+			t.Errorf("Completion date incorrect. Expected: \"%s\", but got: \"%s\"\n", expected, s)
 		}
 	}
 
 	expectedDesc := "measure space for"
 	if strings.Compare(todo.Description.Text, expectedDesc) != 0 {
 		fmt.Println(todo)
-		t.Fatalf("Description incorrect. Expected: \"%s\", but got: \"%s\"\n", expectedDesc, todo.Description.Text)
+		t.Errorf("Description incorrect. Expected: \"%s\", but got: \"%s\"\n", expectedDesc, todo.Description.Text)
 	}
 
 	if !todo.Done || !hasValue(todo.Priority, "A") {
-		t.Fatal("Todo is not done or has incorrect priority value.")
+		t.Error("Todo is not done or has incorrect priority value.")
 	}
 
 	projTag := getFirstTagOfType(todo.Description.Tags, Project)
 	if projTag == nil {
-		t.Fatal("Failed to parse project tag.")
+		t.Error("Failed to parse project tag.")
 	}
 	ctxTag := getFirstTagOfType(todo.Description.Tags, Context)
 	if ctxTag == nil {
-		t.Fatal("Failed to parse context tag.")
+		t.Error("Failed to parse context tag.")
 	}
 	kvTag := getFirstTagOfType(todo.Description.Tags, KeyValue)
 	if kvTag == nil {
-		t.Fatal("Failed to parse key value tag.")
+		t.Error("Failed to parse key value tag.")
 	}
 }
