@@ -146,34 +146,34 @@ func (t Todo) Format() string {
 	return strings.TrimRight(b.String(), " ")
 }
 
-func projectLiteral(current *int, input string) Token {
-	var content string
-
-	var startIndex = *current
-	for ; !isAtEnd(*current, input); *current++ {
-		if isWhiteSpace(*current, input) {
+func moveToWhiteSpace(start int, input string) int {
+	i := start
+	for ; !isAtEnd(i, input); i++ {
+		if isWhiteSpace(i, input) {
 			break
 		}
 	}
-
-	content += input[startIndex+1 : *current]
-	log.Printf("Project Literal==== Content: %s, current: %v\n", content, *current)
-	return Token{tokenType: PLUS, value: content}
+	return i
 }
 
-func contextLiteral(current *int, input string) Token {
+func projectLiteral(curr int, input string) (int, Token) {
 	var content string
+	start, i := curr, curr
+	i = moveToWhiteSpace(i, input)
 
-	var startIndex = *current
-	for ; !isAtEnd(*current, input); *current++ {
-		if isWhiteSpace(*current, input) {
-			break
-		}
-	}
+	content += input[start+1 : i]
+	log.Printf("Project Literal==== Content: %s, current: %v\n", content, i)
+	return i - curr, Token{tokenType: PLUS, value: content}
+}
 
-	content += input[startIndex+1 : *current]
-	log.Printf("Context Literal==== Content: %s, current: %v\n", content, *current)
-	return Token{tokenType: AT, value: content}
+func contextLiteral(curr int, input string) (int, Token) {
+	var content string
+	start, i := curr, curr
+	i = moveToWhiteSpace(i, input)
+
+	content += input[start+1 : i]
+	log.Printf("Context Literal==== Content: %s, current: %v\n", content, curr)
+	return i - curr, Token{tokenType: AT, value: content}
 }
 
 func isAtEnd(current int, input string) bool {
@@ -196,8 +196,8 @@ func isCapitalLetter(current int, input string) bool {
 	return matched
 }
 
-func keyValueLiteral(current *int, input string) Token {
-	colonPos := *current
+func keyValueLiteral(curr int, input string) (int, Token) {
+	colonPos := curr
 
 	keyBegin := colonPos - 1
 	for keyBegin >= 0 && !isWhiteSpace(keyBegin, input) {
@@ -206,36 +206,29 @@ func keyValueLiteral(current *int, input string) Token {
 	keyBegin++
 
 	i := colonPos + 1
-	for !isAtEnd(i, input) {
-		if isWhiteSpace(i, input) {
-			break
-		}
-		i++
-	}
+	i = moveToWhiteSpace(i, input)
 	value := input[colonPos:i]
-	*current += len(value)
 	log.Printf("KV Token: { key: %s, value: %s }\n", input[keyBegin:colonPos], value)
 
-	return Token{tokenType: COLON, value: input[keyBegin:colonPos] + value}
+	return len(value), Token{tokenType: COLON, value: input[keyBegin:colonPos] + value}
 }
 
-func handlePriority(current *int, input string) (*Token, error) {
-	if string(input[*current+2]) != RIGHT_PAREN.String() || !isCapitalLetter(*current+1, input) {
-		return nil, errors.New("bad priority value")
+func handlePriority(curr int, input string) (int, *Token, error) {
+	if string(input[curr+2]) != RIGHT_PAREN.String() || !isCapitalLetter(curr+1, input) {
+		return 0, nil, errors.New("bad priority value")
 	}
-	value := string(input[*current+1])
-	*current += 3
-	return &Token{tokenType: LEFT_PAREN, value: value}, nil
+	value := string(input[curr+1])
+	return 3, &Token{tokenType: LEFT_PAREN, value: value}, nil
 }
 
-func handleDate(current *int, input string) (*Token, error) {
+func handleDate(curr int, input string) (int, *Token, error) {
 	pos := strings.Index(input, DASH.String())
 	log.Printf("Pos starting value: %d\n", pos)
 	// Parse the year backwards
 	yearStart := pos - 4
 	dateValue := ""
 	if yearStart < 0 {
-		return nil, errors.New("couldn't parse date")
+		return 0, nil, errors.New("couldn't parse date")
 	}
 
 	year, month, day := "", "", ""
@@ -248,48 +241,55 @@ func handleDate(current *int, input string) (*Token, error) {
 
 	dateValue = year + "-" + month + "-" + day
 	isValid, err := regexp.MatchString(`^\d{4}-\d{2}-\d{2}$`, dateValue)
-	// subtract 4 for year
-	*current += len(dateValue) - 5
-	log.Printf("Slice from new current value: %s, completion date: %s\n", input[*current:], dateValue)
+	log.Printf("Slice from new current value: %s, completion date: %s\n", input[curr:], dateValue)
 
 	if isValid && err != nil {
-		return nil, errors.New("bad format for date")
+		return 0, nil, errors.New("bad format for date")
 	}
 
-	return &Token{tokenType: DASH, value: dateValue}, nil
+	// subtract 4 for year
+	return len(dateValue) - 5, &Token{tokenType: DASH, value: dateValue}, nil
 }
 
 func scan(input string) []Token {
-	current := 0 // current char
+	curr := 0 // current char
 	tokens := []Token{{tokenType: STRING, value: input}}
 
-	for !isAtEnd(current, input) {
-		char := string(input[current])
+	for !isAtEnd(curr, input) {
+		char := string(input[curr])
 		switch char {
 		case DONE_CHAR.String():
 			tokens = append(tokens, Token{tokenType: DONE_CHAR})
 		case LEFT_PAREN.String():
-			token, err := handlePriority(&current, input)
+			offset, token, err := handlePriority(curr, input)
 			if err != nil {
 				panic(err)
 			}
 			tokens = append(tokens, *token)
+			curr += offset
 		case DASH.String():
-			token, err := handleDate(&current, input)
+			offset, token, err := handleDate(curr, input)
 			if err != nil {
 				panic(err)
 			}
 			tokens = append(tokens, *token)
+			curr += offset
 		case PLUS.String():
-			tokens = append(tokens, projectLiteral(&current, input))
+			offset, token := projectLiteral(curr, input)
+			tokens = append(tokens, token)
+			curr += offset
 		case AT.String():
-			tokens = append(tokens, contextLiteral(&current, input))
+			offset, token := contextLiteral(curr, input)
+			tokens = append(tokens, token)
+			curr += offset
 		case COLON.String():
-			tokens = append(tokens, keyValueLiteral(&current, input))
+			offset, token := keyValueLiteral(curr, input)
+			tokens = append(tokens, token)
+			curr += offset
 		default:
 		}
 
-		current++
+		curr++
 	}
 	return tokens
 }
