@@ -80,6 +80,9 @@ type Todo struct {
 	// Mandatory: Description + tags section of the todo.
 	Description Description
 
+	// Auto-generated: the original todo.txt string of this todo
+	Original string
+
 	// Optional: Todo is complete
 	Done bool
 	// Optional: The todo's Priority is defined as a capital letter (A-Z)
@@ -337,10 +340,12 @@ func stripLeft(desc string, val string, input string) string {
 
 func Parse(input string) (*Todo, error) {
 	log.Printf("Got: %s\n", input)
+	input = strings.Trim(input, " ")
 
 	todo := &Todo{
 		Done:         false,
 		CreationDate: time.Now().UTC(),
+		Original:     input,
 	}
 
 	// Handle todo completion

@@ -2,16 +2,23 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
+	"time"
 
-	todo "github.com/go-do/todo"
+	todos "github.com/go-do/todo"
 	"github.com/urfave/cli/v2"
 )
 
 func init() {
+	f, err := os.OpenFile(time.Now().Format(todos.YYYYMMDD)+".log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println("couldn't open log file")
+	}
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.SetOutput(f)
 }
 
 func main() {
@@ -24,13 +31,13 @@ func main() {
 			Usage:   "`Todo` value based on todo.txt format",
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() > 0 {
-					t, err := todo.Parse(c.Args().First())
-					log.Println(t.Format())
+					t, err := todos.Parse(c.Args().First())
+					log.Println(t.Original)
 					if err != nil {
 						return err
 					}
 
-					todo.AddToFile(t, nil)
+					todos.AddToFile(t)
 				} else {
 					log.Println("Couldn't parse todo.")
 				}
@@ -46,22 +53,24 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					if len(tag) > 0 {
-						log.Println(tag)
-						if len(value) == 0 {
+						if len(value) <= 0 {
+							fmt.Println("you have to provide a value when passing in a tag")
 							return errors.New("you have to provide a value when passing in a tag")
 						}
-						log.Println(value)
 
 						switch strings.ToLower(tag) {
-						case strings.ToLower(todo.Project.String()):
-							todo.PrintByTag(todo.Project, value)
-						case strings.ToLower(todo.Context.String()):
-						case strings.ToLower(todo.KeyValue.String()):
+						case strings.ToLower(todos.Project.String()):
+							todos.PrintByTag(todos.Project, value)
+						case strings.ToLower(todos.Context.String()):
+							todos.PrintByTag(todos.Context, value)
+						case strings.ToLower(todos.KeyValue.String()):
+							todos.PrintByKVTag(value)
 						default:
 							return errors.New("viable tag values are one of project, context or keyvalue")
 						}
+					} else {
+						todos.PrintAll()
 					}
-					todo.PrintAll(nil)
 					return nil
 				},
 			},

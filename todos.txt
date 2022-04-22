@@ -1,1 +1,11 @@
 (A) 2022-04-20 2022-04-22 update screenshots +project 10
+x (B) 2022-04-20 2022-04-22 walk dog +project
+x 2011-03-02 2011-03-01 Review Tim's pull request +TodoTxtTouch @github
+x 2011-03-03 Call Mom due:now
+(A) Call Mom +Family +PeaceLoveAndHappiness @iphone @phone
+2011-03-02 Document +TodoTxt task format
+(A) Thank Mom for the meatballs @phone
+(B) Schedule Goodwill pickup +GarageSale @phone
+2018-04-12 2018-04-28 Post signs around the neighborhood +GarageSale ends:tomorrow
+@GroceryStore Eskimo pies
+x Schedule +dentist @phone
