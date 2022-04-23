@@ -3,6 +3,7 @@ package todo
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -141,6 +142,75 @@ func FindByDescrText(todos []Todo, text string) *Todo {
 	for _, t := range todos {
 		if strings.Contains(strings.ToLower(t.Description.Text), strings.ToLower(text)) {
 			return &t
+		}
+	}
+	return nil
+}
+
+func FindLineByText(lines []string, text string) int {
+	for i, l := range lines {
+		if strings.Contains(strings.ToLower(l), strings.ToLower(text)) {
+			return i
+		}
+	}
+	return -1
+}
+
+func SkipFirst(r io.Reader, text string) ([]string, error) {
+	var b strings.Builder
+	scanner := bufio.NewScanner(r)
+	found := false
+	for scanner.Scan() {
+		s := scanner.Text()
+		if !found && strings.Contains(strings.ToLower(s), strings.ToLower(text)) {
+			// Skip the first occurrence of this string
+			found = true
+			continue
+		}
+		b.WriteString(s + "\n")
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return strings.Split(b.String(), "\n"), nil
+}
+
+func WriteAll(w io.Writer, lines []string) error {
+	for _, fl := range lines {
+		if _, err := fmt.Fprintln(w, fl); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DeleteFirst(file io.Reader, text string) error {
+	lines, err := SkipFirst(file, text)
+	if err != nil {
+		return err
+	}
+
+	// Write lines to new tmp file skipping the first occurrence
+	fname := ".copy-tmp"
+	f, err := os.OpenFile(fname, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	defer f.Close()
+
+	if err := WriteAll(f, lines); err != nil {
+		return err
+	}
+
+	// Replace old file with new file
+	if osf, ok := file.(*os.File); ok {
+		oldName := osf.Name()
+		if err := os.Rename(fname, oldName); err != nil {
+			return err
 		}
 	}
 	return nil

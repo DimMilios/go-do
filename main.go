@@ -74,6 +74,24 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:    "delete",
+				Aliases: []string{"d"},
+				Usage:   "Delete a todo",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() > 0 {
+						f, err := os.Open("todos-copy.txt")
+						if err != nil {
+							fmt.Println("couldn't open file")
+						}
+						todos.DeleteFirst(f, c.Args().First())
+					} else {
+						fmt.Println("Please, provide a description for the todo to be deleted.")
+						log.Println("Couldn't parse todo.")
+					}
+					return nil
+				},
+			},
 		},
 	}
 
