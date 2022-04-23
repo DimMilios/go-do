@@ -21,10 +21,15 @@ A todo cli application based on the [todo.txt](https://github.com/todotxt/todo.t
 - [] Filter todos
   - [] Complete or incomplete
   - [] By completion/creation date
-  - [] By tags
-    - [] By project tag
-    - [] By context tag
-    - [] By key value tag
+  - [x] By tags
+    - [x] By project tag
+    - [x] By context tag
+    - [x] By key value tag
+
+## Project todo
+- [] Completion date can't come before creation dates
+- [] Marking a todo as done automatically should add a completion date if one wasn 't provided
+- [] Providing a completion date should also mark the todo as done
 
 ## Grammar translation
 This is a representation of the `todo.txt` format in `EBNF`.

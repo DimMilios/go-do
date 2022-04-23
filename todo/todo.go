@@ -136,3 +136,12 @@ func PrintByKVTag(key string) {
 		fmt.Println(f.Original)
 	}
 }
+
+func FindByDescrText(todos []Todo, text string) *Todo {
+	for _, t := range todos {
+		if strings.Contains(strings.ToLower(t.Description.Text), strings.ToLower(text)) {
+			return &t
+		}
+	}
+	return nil
+}

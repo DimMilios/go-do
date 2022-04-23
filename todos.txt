@@ -9,3 +9,4 @@ x 2011-03-03 Call Mom due:now
 2018-04-12 2018-04-28 Post signs around the neighborhood +GarageSale ends:tomorrow
 @GroceryStore Eskimo pies
 x Schedule +dentist @phone
+(A) 2022-01-01 2022-01-02 doctor appointment @personal
