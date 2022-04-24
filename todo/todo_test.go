@@ -45,7 +45,10 @@ func Test_Skip_First_Occurrence(t *testing.T) {
 		{"Thank Mom for the", "(A) Thank Mom for the meatballs @phone"},
 		{"Goodwill", "(B) Schedule Goodwill pickup +GarageSale @phone"},
 		{"around the neighborhood", "2018-04-12 2018-04-28 Post signs around the neighborhood +GarageSale ends:tomorrow"},
+		{"2018-04-12 2018-04-28 Post signs around the neighborhood +GarageSale ends:tomorrow", "2018-04-12 2018-04-28 Post signs around the neighborhood +GarageSale ends:tomorrow"},
 		{"pies", "@GroceryStore Eskimo pies"},
+		{"@GroceryStore Eskimo pies", "@GroceryStore Eskimo pies"},
+		{"x (B) 2022-04-20 2022-04-22 walk dog +project", "x (B) 2022-04-20 2022-04-22 walk dog +project"},
 	}
 
 	t.Run("One by one", func(t *testing.T) {
@@ -74,7 +77,6 @@ func Test_Skip_First_Occurrence(t *testing.T) {
 			}
 		}
 	})
-
 }
 
 // func Test_Delete_Todo_By_Description_Text(t *testing.T) {

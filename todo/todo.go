@@ -2,6 +2,7 @@ package todo
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -31,6 +32,40 @@ func AddToFile(todo *Todo) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func GetFromFile(r io.Reader) ([]string, error) {
+	var b strings.Builder
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		b.WriteString(scanner.Text() + "\n")
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return strings.Split(b.String(), "\n"), nil
+}
+
+func GetAll(r io.Reader) ([]*Todo, error) {
+	lines, err := GetFromFile(r)
+	if err != nil {
+		return nil, err
+	}
+
+	todos := make([]*Todo, 0)
+	for _, l := range lines {
+		t, err := Parse(l)
+		if err != nil {
+			log.Println(err)
+			return todos, err
+		}
+		todos = append(todos, t)
+
+	}
+	return todos, nil
 }
 
 func PrintAll() {
@@ -170,12 +205,20 @@ func SkipFirst(r io.Reader, text string) ([]string, error) {
 		b.WriteString(s + "\n")
 	}
 
+	if !found {
+		return nil, errors.New("text was not found")
+	}
+
 	if err := scanner.Err(); err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	return strings.Split(b.String(), "\n"), nil
+	if len(b.String()) > 0 {
+		return strings.Split(b.String(), "\n"), nil
+	}
+
+	return nil, errors.New("couldn't write lines")
 }
 
 func WriteAll(w io.Writer, lines []string) error {
@@ -189,29 +232,36 @@ func WriteAll(w io.Writer, lines []string) error {
 
 func DeleteFirst(file io.Reader, text string) error {
 	lines, err := SkipFirst(file, text)
+	if len(lines) < 1 || err != nil {
+		fmt.Println("couldn't parse todo file")
+		log.Fatal("couldn't parse todo file")
+	}
+
 	if err != nil {
 		return err
 	}
 
 	// Write lines to new tmp file skipping the first occurrence
-	fname := ".copy-tmp"
-	f, err := os.OpenFile(fname, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	tmp, err := os.Create("copy.tmp")
 	if err != nil {
-		log.Println(err)
-		return err
+		panic(err)
 	}
-	defer f.Close()
+	defer tmp.Close()
 
-	if err := WriteAll(f, lines); err != nil {
-		return err
+	if err := WriteAll(tmp, lines); err != nil {
+		log.Fatal(err)
 	}
 
 	// Replace old file with new file
 	if osf, ok := file.(*os.File); ok {
-		oldName := osf.Name()
-		if err := os.Rename(fname, oldName); err != nil {
+		if err := os.Rename("copy.tmp", osf.Name()); err != nil {
 			return err
 		}
 	}
+
+	if err := tmp.Close(); err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
 }
