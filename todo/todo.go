@@ -68,6 +68,26 @@ func GetAll(r io.Reader) ([]*Todo, error) {
 	return todos, nil
 }
 
+func GetCompleteLines(lines []string) []string {
+	done := make([]string, 0)
+	for _, l := range lines {
+		if len(l) > 2 && l[0:2] == "x " {
+			done = append(done, l)
+		}
+	}
+	return done
+}
+
+func GetIncompleteLines(lines []string) []string {
+	incomplete := make([]string, 0)
+	for _, l := range lines {
+		if len(l) > 2 && l[0:2] != "x " {
+			incomplete = append(incomplete, l)
+		}
+	}
+	return incomplete
+}
+
 func PrintAll() {
 	fname := fileOrDefault("")
 	f, err := os.Open(fname)

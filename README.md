@@ -12,14 +12,14 @@ A todo cli application based on the [todo.txt](https://github.com/todotxt/todo.t
 ### Todos
 - [x] Add a todo
 - [] Update a todo
-- [] Delete a todo
+- [x] Delete a todo
 - [x] List all todos
 - [] Sort todos
   - [] By priority
   - [] By completion status
   - [] By tags
 - [] Filter todos
-  - [] Complete or incomplete
+  - [x] Complete or incomplete
   - [] By completion/creation date
   - [x] By tags
     - [x] By project tag

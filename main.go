@@ -75,6 +75,8 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "tag", Aliases: []string{"t"}, Destination: &tag},
 					&cli.StringFlag{Name: "value", Aliases: []string{"v"}, Destination: &value},
+					&cli.BoolFlag{Name: "complete", Aliases: []string{"c", "done", "d"}},
+					&cli.BoolFlag{Name: "incomplete", Aliases: []string{"inc", "todo", "td"}},
 				},
 				Action: func(c *cli.Context) error {
 					if len(tag) > 0 {
@@ -93,6 +95,28 @@ func main() {
 						default:
 							return errors.New("viable tag values are one of project, context or keyvalue")
 						}
+					} else if c.Bool("complete") {
+						f, err := os.Open("todos-copy.txt")
+						if err != nil {
+							return errors.New("couldn't open file")
+						}
+						defer f.Close()
+
+						lines, _ := todos.GetFromFile(f)
+						for _, l := range todos.GetCompleteLines(lines) {
+							fmt.Println(l)
+						}
+					} else if c.Bool("incomplete") {
+						f, err := os.Open("todos-copy.txt")
+						if err != nil {
+							return errors.New("couldn't open file")
+						}
+						defer f.Close()
+
+						lines, _ := todos.GetFromFile(f)
+						for _, l := range todos.GetIncompleteLines(lines) {
+							fmt.Println(l)
+						}
 					} else {
 						todos.PrintAll()
 					}
@@ -106,23 +130,23 @@ func main() {
 				Action: func(c *cli.Context) error {
 					if c.Args().Len() > 0 {
 						if len(c.Args().First()) < 1 {
-							fmt.Println("Todo description cannot be empty.")
 							log.Fatal("passed empty description")
+							return errors.New("Todo description cannot be empty.")
 						}
 
 						f, err := os.Open("todos-copy.txt")
 						if err != nil {
-							fmt.Println("couldn't open file")
+							return errors.New("couldn't open file")
 						}
 						defer f.Close()
 						err = todos.DeleteFirst(f, c.Args().First())
 						if err != nil {
-							fmt.Printf("Failed to delete todo with text: %q", c.Args().First())
+							return fmt.Errorf("failed to delete todo with text: %q", c.Args().First())
 						}
 						fmt.Printf("You deleted %q", c.Args().First())
 					} else {
-						fmt.Println("Please, provide a description for the todo to be deleted.")
 						log.Println("Couldn't parse todo: empty description")
+						return errors.New("please, provide a description for the todo to be deleted")
 					}
 					return nil
 				},
@@ -135,7 +159,7 @@ func main() {
 					fname := "todos-copy.txt"
 					f, err := os.Open(fname)
 					if err != nil {
-						fmt.Println("couldn't open file")
+						return errors.New("couldn't open file")
 					}
 					defer f.Close()
 
