@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -12,6 +15,44 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 )
+
+func init() {
+	f, err := os.OpenFile(time.Now().Format(todos.YYYYMMDD)+".log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println("couldn't open log file")
+	}
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.SetOutput(f)
+
+	setEnvVars(".env")
+}
+
+// Read variables set in a .env file and export them as environment variables.
+// The implementation is very naive, but we don't really need a dotenv config package right now.
+func setEnvVars(file string) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Printf("Couldn't open %s file\n", file)
+		fmt.Printf("Couldn't open %s file\n", file)
+		return
+	}
+
+	body, err := io.ReadAll(f)
+	if err != nil {
+		log.Println("Failed to read file data")
+		fmt.Println("Failed to read file data")
+		return
+	}
+	lines := strings.Split(string(body), "\n")
+
+	for _, l := range lines {
+		if !strings.Contains(l, "=") || strings.HasPrefix(l, "#") {
+			continue
+		}
+		line := strings.Split(l, "=")
+		os.Setenv(line[0], line[1])
+	}
+}
 
 func confirmDeletion(fname, result string) error {
 	pr := promptui.Prompt{
@@ -36,15 +77,6 @@ func confirmDeletion(fname, result string) error {
 
 	todos.DeleteFirst(f, result)
 	return nil
-}
-
-func init() {
-	f, err := os.OpenFile(time.Now().Format(todos.YYYYMMDD)+".log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println("couldn't open log file")
-	}
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	log.SetOutput(f)
 }
 
 func main() {
@@ -173,6 +205,50 @@ func main() {
 					_, result, _ := prompt.Run()
 					confirmDeletion(fname, result)
 					return nil
+				},
+			},
+			{
+				Name:  "sync",
+				Usage: "Sync todos on Trello (requires trello API key and Token environment variables)",
+				Action: func(c *cli.Context) error {
+					key, ok := os.LookupEnv("TRELLO_API")
+					if !ok {
+						fmt.Println("Couldn't get trello API Key.")
+						log.Println("Couldn't get trello API Key.")
+					}
+
+					token, ok := os.LookupEnv("TRELLO_TOKEN")
+					if !ok {
+						fmt.Println("Couldn't get trello API Key.")
+						log.Println("Couldn't get trello API Key.")
+					}
+
+					trelloURL := fmt.Sprintf("https://api.trello.com/1/members/me/boards?fields=name,url&key=%s&token=%s", key, token)
+
+					client := http.Client{}
+					req, _ := http.NewRequest("GET", trelloURL, nil)
+					req.Header.Set("Content-Type", "application/json")
+					res, err := client.Do(req)
+					if err != nil {
+						log.Fatal(err)
+					}
+					body, err := io.ReadAll(res.Body)
+					res.Body.Close()
+					if res.StatusCode > 299 {
+						log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+					}
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					var result []interface{}
+					if err := json.Unmarshal(body, &result); err != nil {
+						fmt.Printf("%s\n", body)
+						log.Fatal(err)
+					}
+					fmt.Printf("Response body: %s\n", result)
+
+					return err
 				},
 			},
 		},

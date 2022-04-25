@@ -1,6 +1,11 @@
 # Go-do
 A todo cli application based on the [todo.txt](https://github.com/todotxt/todo.txt) format.
 
+## Trello integration (in progress)
+Generate API key and API token here: [Trello API](https://developer.atlassian.com/cloud/trello/guides/rest-api/api-introduction/).
+
+Rename the file `.env.example` to `.env` and copy generated key and token values to that file.
+
 ## Features
 ### General
 - [x] Display all todos command (`show`)
