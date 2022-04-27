@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -223,32 +221,9 @@ func main() {
 						log.Println("Couldn't get trello API Key.")
 					}
 
-					trelloURL := fmt.Sprintf("https://api.trello.com/1/members/me/boards?fields=name,url&key=%s&token=%s", key, token)
-
-					client := http.Client{}
-					req, _ := http.NewRequest("GET", trelloURL, nil)
-					req.Header.Set("Content-Type", "application/json")
-					res, err := client.Do(req)
-					if err != nil {
-						log.Fatal(err)
-					}
-					body, err := io.ReadAll(res.Body)
-					res.Body.Close()
-					if res.StatusCode > 299 {
-						log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-					}
-					if err != nil {
-						log.Fatal(err)
-					}
-
-					var result []interface{}
-					if err := json.Unmarshal(body, &result); err != nil {
-						fmt.Printf("%s\n", body)
-						log.Fatal(err)
-					}
-					fmt.Printf("Response body: %s\n", result)
-
-					return err
+					client := NewClient(key, token)
+					client.demoCall(client.createURL("members/me/boards", "fields=name,url"))
+					return nil
 				},
 			},
 		},

@@ -6,6 +6,25 @@ Generate API key and API token here: [Trello API](https://developer.atlassian.co
 
 Rename the file `.env.example` to `.env` and copy generated key and token values to that file.
 
+### Terms
+Board = project
+List = context
+Card = todo entry
+
+#### Example for Todo:
+```
+x 2011-03-02 2011-03-01 Review Tim's pull request +TodoTxtTouch @github
+```
+
+Mapped Trello objects
+- Board: `TodoTxtTouch`
+- List: `github`
+- Card: 
+  - done: `true`
+  - creation date: `2011-03-02`
+  - completion date: `2011-03-01`
+  - description: `Review Tim's pull request`
+
 ## Features
 ### General
 - [x] Display all todos command (`show`)
