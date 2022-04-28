@@ -209,16 +209,12 @@ func main() {
 				Name:  "sync",
 				Usage: "Sync todos on Trello (requires trello API key and Token environment variables)",
 				Action: func(c *cli.Context) error {
-					key, ok := os.LookupEnv("TRELLO_API")
-					if !ok {
-						fmt.Println("Couldn't get trello API Key.")
-						log.Println("Couldn't get trello API Key.")
-					}
+					key, keyOk := os.LookupEnv("TRELLO_API")
+					token, tokenOk := os.LookupEnv("TRELLO_TOKEN")
 
-					token, ok := os.LookupEnv("TRELLO_TOKEN")
-					if !ok {
-						fmt.Println("Couldn't get trello API Key.")
-						log.Println("Couldn't get trello API Key.")
+					if !keyOk || !tokenOk {
+						fmt.Println("Couldn't get Trello API credentials.")
+						log.Fatalln("Couldn't get Trello API credentials.")
 					}
 
 					client := NewClient(key, token)
