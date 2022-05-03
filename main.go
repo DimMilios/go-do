@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -12,6 +13,44 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 )
+
+func init() {
+	f, err := os.OpenFile(time.Now().Format(todos.YYYYMMDD)+".log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println("couldn't open log file")
+	}
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.SetOutput(f)
+
+	setEnvVars(".env")
+}
+
+// Read variables set in a .env file and export them as environment variables.
+// The implementation is very naive, but we don't really need a dotenv config package right now.
+func setEnvVars(file string) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Printf("Couldn't open %s file\n", file)
+		fmt.Printf("Couldn't open %s file\n", file)
+		return
+	}
+
+	body, err := io.ReadAll(f)
+	if err != nil {
+		log.Println("Failed to read file data")
+		fmt.Println("Failed to read file data")
+		return
+	}
+	lines := strings.Split(string(body), "\n")
+
+	for _, l := range lines {
+		if !strings.Contains(l, "=") || strings.HasPrefix(l, "#") {
+			continue
+		}
+		line := strings.Split(l, "=")
+		os.Setenv(line[0], line[1])
+	}
+}
 
 func confirmDeletion(fname, result string) error {
 	pr := promptui.Prompt{
@@ -36,15 +75,6 @@ func confirmDeletion(fname, result string) error {
 
 	todos.DeleteFirst(f, result)
 	return nil
-}
-
-func init() {
-	f, err := os.OpenFile(time.Now().Format(todos.YYYYMMDD)+".log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println("couldn't open log file")
-	}
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	log.SetOutput(f)
 }
 
 func main() {
@@ -172,6 +202,23 @@ func main() {
 					}
 					_, result, _ := prompt.Run()
 					confirmDeletion(fname, result)
+					return nil
+				},
+			},
+			{
+				Name:  "sync",
+				Usage: "Sync todos on Trello (requires trello API key and Token environment variables)",
+				Action: func(c *cli.Context) error {
+					key, keyOk := os.LookupEnv("TRELLO_API")
+					token, tokenOk := os.LookupEnv("TRELLO_TOKEN")
+
+					if !keyOk || !tokenOk {
+						fmt.Println("Couldn't get Trello API credentials.")
+						log.Fatalln("Couldn't get Trello API credentials.")
+					}
+
+					client := NewClient(key, token)
+					client.demoCall(client.createURL("members/me/boards", "fields=name,url"))
 					return nil
 				},
 			},
